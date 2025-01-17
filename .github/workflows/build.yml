@@ -14,28 +14,71 @@ jobs:
     name: Build for Multiple Platforms
     strategy:
       matrix:
-        os:
-          - ubuntu-latest
-          - debian:bullseye
-          - linuxmint
-          - fedora:latest
-          - centos:7
-          - rhel:8
-          - archlinux:base
-          - manjaro
-          - alpine:latest
-          - almalinux:latest
-          - rockylinux:latest
-          - macos-latest
-          - anolisos
-          - suse:latest
-          - opensuse/tumbleweed
-          - voidlinux
-        arch:
-          - amd64
-          - arm64
-      exclude:
-        - os: alibabacloud-linux
+        include:
+          - os: ubuntu-latest
+            arch: amd64
+          - os: ubuntu-latest
+            arch: arm64
+          - os: debian:bullseye
+            arch: amd64
+          - os: debian:bullseye
+            arch: arm64
+          - os: linuxmint
+            arch: amd64
+          - os: linuxmint
+            arch: arm64
+          - os: fedora:latest
+            arch: amd64
+          - os: fedora:latest
+            arch: arm64
+          - os: centos:7
+            arch: amd64
+          - os: centos:7
+            arch: arm64
+          - os: rhel:8
+            arch: amd64
+          - os: rhel:8
+            arch: arm64
+          - os: archlinux:base
+            arch: amd64
+          - os: archlinux:base
+            arch: arm64
+          - os: manjaro
+            arch: amd64
+          - os: manjaro
+            arch: arm64
+          - os: alpine:latest
+            arch: amd64
+          - os: alpine:latest
+            arch: arm64
+          - os: almalinux:latest
+            arch: amd64
+          - os: almalinux:latest
+            arch: arm64
+          - os: rockylinux:latest
+            arch: amd64
+          - os: rockylinux:latest
+            arch: arm64
+          - os: macos-latest
+            arch: amd64
+          - os: macos-latest
+            arch: arm64
+          - os: anolisos
+            arch: amd64
+          - os: anolisos
+            arch: arm64
+          - os: suse:latest
+            arch: amd64
+          - os: suse:latest
+            arch: arm64
+          - os: opensuse/tumbleweed
+            arch: amd64
+          - os: opensuse/tumbleweed
+            arch: arm64
+          - os: voidlinux
+            arch: amd64
+          - os: voidlinux
+            arch: arm64
 
     runs-on: ${{ matrix.os == 'macos-latest' && 'macos-latest' || 'ubuntu-latest' }}
 
