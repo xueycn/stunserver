@@ -1,0 +1,101 @@
+name: Build Stunserver
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for Multiple Platforms
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - debian-bullseye
+          - linuxmint
+          - fedora-latest
+          - centos-7
+          - rhel-8
+          - archlinux
+          - manjaro
+          - alpine-latest
+          - almalinux-latest
+          - rockylinux-latest
+          - macos-latest
+          - anolisos
+          - alibabacloud-linux
+          - suse-latest
+          - opensuse-tumbleweed
+          - voidlinux
+        arch:
+          - amd64
+          - arm64
+
+    steps:
+      # 检查代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 安装依赖
+      - name: Install dependencies (Ubuntu/Debian/Mint)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'debian-bullseye' || matrix.os == 'linuxmint'
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y build-essential cmake
+
+      - name: Install dependencies (Fedora/RHEL/CentOS/AlmaLinux/RockyLinux)
+        if: matrix.os == 'fedora-latest' || matrix.os == 'centos-7' || matrix.os == 'rhel-8' || matrix.os == 'almalinux-latest' || matrix.os == 'rockylinux-latest'
+        run: |
+          sudo yum install -y gcc cmake make
+
+      - name: Install dependencies (Arch/Manjaro)
+        if: matrix.os == 'archlinux' || matrix.os == 'manjaro'
+        run: |
+          sudo pacman -Sy --noconfirm gcc cmake make
+
+      - name: Install dependencies (Alpine)
+        if: matrix.os == 'alpine-latest'
+        run: |
+          apk add --no-cache build-base cmake
+
+      - name: Install dependencies (SUSE/openSUSE)
+        if: matrix.os == 'suse-latest' || matrix.os == 'opensuse-tumbleweed'
+        run: |
+          sudo zypper install -y gcc cmake make
+
+      - name: Install dependencies (Void Linux)
+        if: matrix.os == 'voidlinux'
+        run: |
+          sudo xbps-install -Sy gcc cmake make
+
+      - name: Install dependencies (Anolis/Alibaba Cloud Linux)
+        if: matrix.os == 'anolisos' || matrix.os == 'alibabacloud-linux'
+        run: |
+          sudo yum install -y gcc cmake make
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install cmake make
+
+      # 编译程序
+      - name: Build stunserver
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make -j$(nproc)
+
+      # 保存编译结果
+      - name: Archive binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: stunserver-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/stunserver
