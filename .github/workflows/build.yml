@@ -28,18 +28,18 @@ jobs:
           - rockylinux:latest
           - macos-latest
           - anolisos
-          - alibabacloud-linux
           - suse:latest
           - opensuse/tumbleweed
           - voidlinux
         arch:
           - amd64
           - arm64
+      exclude:
+        - os: alibabacloud-linux
 
     runs-on: ${{ matrix.os == 'macos-latest' && 'macos-latest' || 'ubuntu-latest' }}
 
     steps:
-      # 设置运行环境为对应镜像
       - name: Set up Docker for non-native OS
         if: matrix.os != 'ubuntu-latest' && matrix.os != 'macos-latest'
         uses: addnab/docker-run-action@v3
@@ -47,11 +47,9 @@ jobs:
           image: ${{ matrix.os }}
           options: --entrypoint ""
 
-      # 检出代码
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 安装依赖
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -68,17 +66,15 @@ jobs:
             sudo zypper install -y gcc cmake make
           elif [ "${{ matrix.os }}" == "voidlinux" ]; then
             sudo xbps-install -Sy gcc cmake make
-          elif [[ "${{ matrix.os }}" =~ anolisos|alibabacloud-linux ]]; then
+          elif [[ "${{ matrix.os }}" =~ anolisos ]]; then
             sudo yum install -y gcc cmake make
           fi
 
-      # 安装依赖 (macOS)
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install cmake make
 
-      # 编译程序
       - name: Build stunserver
         run: |
           mkdir -p build
@@ -86,7 +82,6 @@ jobs:
           cmake ..
           make -j$(nproc)
 
-      # 保存编译结果
       - name: Archive binaries
         uses: actions/upload-artifact@v3
         with:
