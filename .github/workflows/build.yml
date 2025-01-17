@@ -4,129 +4,29 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
 
 jobs:
   build:
-    name: Build for Multiple Platforms
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            arch: amd64
-          - os: ubuntu-latest
-            arch: arm64
-          - os: debian:bullseye
-            arch: amd64
-          - os: debian:bullseye
-            arch: arm64
-          - os: linuxmint
-            arch: amd64
-          - os: linuxmint
-            arch: arm64
-          - os: fedora:latest
-            arch: amd64
-          - os: fedora:latest
-            arch: arm64
-          - os: centos:7
-            arch: amd64
-          - os: centos:7
-            arch: arm64
-          - os: rhel:8
-            arch: amd64
-          - os: rhel:8
-            arch: arm64
-          - os: archlinux:base
-            arch: amd64
-          - os: archlinux:base
-            arch: arm64
-          - os: manjaro
-            arch: amd64
-          - os: manjaro
-            arch: arm64
-          - os: alpine:latest
-            arch: amd64
-          - os: alpine:latest
-            arch: arm64
-          - os: almalinux:latest
-            arch: amd64
-          - os: almalinux:latest
-            arch: arm64
-          - os: rockylinux:latest
-            arch: amd64
-          - os: rockylinux:latest
-            arch: arm64
-          - os: macos-latest
-            arch: amd64
-          - os: macos-latest
-            arch: arm64
-          - os: anolisos
-            arch: amd64
-          - os: anolisos
-            arch: arm64
-          - os: suse:latest
-            arch: amd64
-          - os: suse:latest
-            arch: arm64
-          - os: opensuse/tumbleweed
-            arch: amd64
-          - os: opensuse/tumbleweed
-            arch: arm64
-          - os: voidlinux
-            arch: amd64
-          - os: voidlinux
-            arch: arm64
-
-    runs-on: ${{ matrix.os == 'macos-latest' && 'macos-latest' || 'ubuntu-latest' }}
+        platform: [ubuntu-latest, debian:bullseye, fedora:latest, alpine:latest]
+        architecture: [amd64, arm64]
 
     steps:
-      - name: Set up Docker for non-native OS
-        if: matrix.os != 'ubuntu-latest' && matrix.os != 'macos-latest'
-        uses: addnab/docker-run-action@v3
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
         with:
-          image: ${{ matrix.os }}
-          options: --entrypoint ""
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-${{ matrix.architecture }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-
 
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
+      - name: Build and push Docker image
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ] || [ "${{ matrix.os }}" == "debian:bullseye" ] || [ "${{ matrix.os }}" == "linuxmint" ]; then
-            sudo apt-get update
-            sudo apt-get install -y build-essential cmake
-          elif [[ "${{ matrix.os }}" =~ fedora|rhel|centos|almalinux|rockylinux ]]; then
-            sudo yum install -y gcc cmake make
-          elif [[ "${{ matrix.os }}" =~ archlinux|manjaro ]]; then
-            sudo pacman -Syu --noconfirm gcc cmake make
-          elif [ "${{ matrix.os }}" == "alpine:latest" ]; then
-            apk add --no-cache build-base cmake
-          elif [[ "${{ matrix.os }}" =~ suse|opensuse ]]; then
-            sudo zypper install -y gcc cmake make
-          elif [ "${{ matrix.os }}" == "voidlinux" ]; then
-            sudo xbps-install -Sy gcc cmake make
-          elif [[ "${{ matrix.os }}" =~ anolisos ]]; then
-            sudo yum install -y gcc cmake make
-          fi
-
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install cmake make
-
-      - name: Build stunserver
-        run: |
-          mkdir -p build
-          cd build
-          cmake ..
-          make -j$(nproc)
-
-      - name: Archive binaries
-        uses: actions/upload-artifact@v3
-        with:
-          name: stunserver-${{ matrix.os }}-${{ matrix.arch }}
-          path: build/stunserver
+          docker buildx build --platform ${{ matrix.platform }} --architecture ${{ matrix.architecture }} -t my-stunserver .
